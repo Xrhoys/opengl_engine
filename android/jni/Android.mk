@@ -5,7 +5,7 @@ LOCAL_PATH := $(call my-dir)
 include $(CLEAR_VARS)
 
 LOCAL_MODULE := main
-LOCAL_SRC_FILES := android_main.cpp
+LOCAL_SRC_FILES := ../../android_main.cpp
 LOCAL_C_INCLUDES := $(LOCAL_PATH)/../..
 LOCAL_CFLAGS := -Wno-null-dereference -Wno-writable-strings -Wno-format-nonliteral
 #LOCAL_CPPFLAGS
