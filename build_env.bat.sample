@@ -1,0 +1,10 @@
+@REM Win32 msvc related env values
+if "%MSVC_VARS_PATH%" equ "" set MSVC_VARS_PATH=PATH\TO\vcvars64.bat
+
+@REM Android related env vsalues
+if "%ANDROID_NDK%" equ "" set ANDROID_NDK=PATH\TO\android\ndk
+if "%ANDROID_SDK%" equ "" set ANDROID_SDK=PATH\TO\android\sdk
+if "%JAVA_JDK%" equ "" set JAVA_JDK=PATH\TO\jdk-18.0.2.1
+
+@REM Emscripten related env svalues
+if "%EMSDK_PATH%" equ "" set EMSDK_PATH=PATH\TO\emsdk\emsdk_env.bat

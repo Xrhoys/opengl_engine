@@ -8,3 +8,6 @@ android/.keystore
 
 # Env .bat
 build_env.bat
+
+# Ignore IDE configuration
+project.4coder
