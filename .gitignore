@@ -5,3 +5,6 @@ android/bin
 android/lib
 android/obj
 android/.keystore
+
+# Env .bat
+build_env.bat
