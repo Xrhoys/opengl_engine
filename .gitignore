@@ -11,3 +11,4 @@ build_env.bat
 
 # Ignore IDE configuration
 project.4coder
+scripts/**rdbg
