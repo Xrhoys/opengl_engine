@@ -311,17 +311,13 @@ WinMain(HINSTANCE Instance,
 		i32 pixelAttribs[] = 
 		{
 			WGL_DRAW_TO_WINDOW_ARB, GL_TRUE,
-			WGL_SUPPORT_OPENGL_ARB, GL_TRUE,
-			WGL_DOUBLE_BUFFER_ARB, GL_TRUE,
-			WGL_PIXEL_TYPE_ARB, WGL_TYPE_RGBA_ARB,
-			WGL_ACCELERATION_ARB, WGL_FULL_ACCELERATION_ARB,
-			WGL_COLOR_BITS_ARB, 32,
-			WGL_ALPHA_BITS_ARB, 8,
-			WGL_DEPTH_BITS_ARB, 24,
-			WGL_STENCIL_BITS_ARB, 8,
-			WGL_SAMPLE_BUFFERS_ARB, GL_TRUE,
-			WGL_SAMPLES_ARB, 4,
-			0
+            WGL_SUPPORT_OPENGL_ARB, GL_TRUE,
+            WGL_DOUBLE_BUFFER_ARB,  GL_TRUE,
+            WGL_PIXEL_TYPE_ARB,     WGL_TYPE_RGBA_ARB,
+            WGL_COLOR_BITS_ARB,     24,
+            WGL_DEPTH_BITS_ARB,     24,
+            WGL_STENCIL_BITS_ARB,   8,
+			0,
 		};
 		
 		i32 pixelFormatID;
@@ -342,10 +338,15 @@ WinMain(HINSTANCE Instance,
 		i32 major_min = 4, minor_min = 5;
 		i32 contextAttribs[] = 
 		{
-			WGL_CONTEXT_MAJOR_VERSION_ARB, major_min,
-			WGL_CONTEXT_MINOR_VERSION_ARB, minor_min,
-			WGL_CONTEXT_PROFILE_MASK_ARB, WGL_CONTEXT_CORE_PROFILE_BIT_ARB,
-			0
+			WGL_CONTEXT_MAJOR_VERSION_ARB, 4,
+            WGL_CONTEXT_MINOR_VERSION_ARB, 5,
+            WGL_CONTEXT_PROFILE_MASK_ARB,  WGL_CONTEXT_CORE_PROFILE_BIT_ARB,
+#ifdef DEBUG
+            // ask for debug context for non "Release" builds
+            // this is so we can enable debug callback
+            WGL_CONTEXT_FLAGS_ARB, WGL_CONTEXT_DEBUG_BIT_ARB,
+#endif
+            0,
 		};
 		
 		HGLRC rc = wglCreateContextAttribsARB(dc, 0, contextAttribs);
