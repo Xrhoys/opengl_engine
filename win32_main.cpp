@@ -32,6 +32,23 @@ FatalError(const char* message)
     MessageBoxA(NULL, message, "Error", MB_ICONEXCLAMATION);
     ExitProcess(0);
 }
+#ifdef DEBUG
+internal void APIENTRY 
+DebugCallback(GLenum source, GLenum type, GLuint id, GLenum severity,
+			  GLsizei length, const GLchar* message, const void* user)
+{
+    OutputDebugStringA(message);
+    OutputDebugStringA("\n");
+    if (severity == GL_DEBUG_SEVERITY_HIGH || severity == GL_DEBUG_SEVERITY_MEDIUM)
+    {
+        if (IsDebuggerPresent())
+        {
+            Assert(!"OpenGL error - check the callstack in debugger");
+        }
+        FatalError("OpenGL API usage error! Use debugger to examine call stack!");
+    }
+}
+#endif
 
 PLATFORM_LOG(Win32Log)
 {
@@ -359,6 +376,13 @@ WinMain(HINSTANCE Instance,
 		{
 			return 1;
 		}
+		
+#ifdef DEBUG
+        // enable debug callback
+        glDebugMessageCallback(&DebugCallback, NULL);
+        glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
+#endif
+		
 	}
     
     if(!gladLoadGL())
