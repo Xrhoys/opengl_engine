@@ -32,10 +32,10 @@ FatalError(const char* message)
     MessageBoxA(NULL, message, "Error", MB_ICONEXCLAMATION);
     ExitProcess(0);
 }
+
 #ifdef DEBUG
-internal void APIENTRY 
-DebugCallback(GLenum source, GLenum type, GLuint id, GLenum severity,
-			  GLsizei length, const GLchar* message, const void* user)
+internal void APIENTRY DebugCallback(GLenum source, GLenum type, GLuint id, GLenum severity,
+									 GLsizei length, const GLchar* message, const void* user)
 {
     OutputDebugStringA(message);
     OutputDebugStringA("\n");
@@ -377,18 +377,18 @@ WinMain(HINSTANCE Instance,
 			return 1;
 		}
 		
+		if(!gladLoadGL())
+		{
+			return -1;
+		}
+		
 #ifdef DEBUG
-        // enable debug callback
-        glDebugMessageCallback(&DebugCallback, NULL);
-        glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
+		// enable debug callback
+		glDebugMessageCallback(&DebugCallback, NULL);
+		glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
 #endif
 		
 	}
-    
-    if(!gladLoadGL())
-    {
-        return -1;
-    }
     
     PFNWGLGETEXTENSIONSSTRINGEXTPROC _wglGetExtensionsStringEXT = 
 	(PFNWGLGETEXTENSIONSSTRINGEXTPROC)wglGetProcAddress("wglGetExtensionsStringEXT");

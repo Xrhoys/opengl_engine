@@ -98,12 +98,13 @@ render_DrawScene(platform_engine* engine, platform_render* render, float dt)
     glClearColor(0.f, 0.38f, 0.85f, 1.f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
     
+    glUseProgram(render->program);
+	
 	u32 vpUniformLocation = glGetUniformLocation(render->program, "viewProjection");
 	matrix viewProjection = game_OrthographicProjection(V2(0, 0), engine->windowWidth, engine->windowHeight);
 	glUniformMatrix4fv(vpUniformLocation, 1, GL_FALSE, (f32*)&viewProjection);
 	
     glBindVertexArray(render->vao);
-    glUseProgram(render->program);
 	glDrawArraysInstanced(GL_TRIANGLE_STRIP, 0, 4, 1);
 }
 
