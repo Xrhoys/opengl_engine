@@ -150,33 +150,90 @@ WinMain(HINSTANCE Instance,
 	
 	RegisterClassEx(&wc);
 	
-	HWND hwnd = CreateWindowEx(WS_EX_NOREDIRECTIONBITMAP,
-							   wc.lpszClassName, "Engine",
-							   WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX | WS_MAXIMIZEBOX | WS_THICKFRAME,
-							   CW_USEDEFAULT, CW_USEDEFAULT,
-							   CW_USEDEFAULT, CW_USEDEFAULT,
-							   NULL, NULL, wc.hInstance, NULL);
-    
-	i32 width = CW_USEDEFAULT;
-    i32 height = CW_USEDEFAULT;
+    HWND dummyWND = CreateWindow(wc.lpszClassName, "Fake Window",
+								 WS_CLIPSIBLINGS | WS_CLIPCHILDREN,
+								 0, 0,
+								 1, 1,
+								 NULL, NULL,         
+								 Instance, NULL);
 	
-	platform_engine engine = {};
+    HDC dummy = GetDC(dummyWND);
+	
+    PIXELFORMATDESCRIPTOR dummyPFD = {};
+    dummyPFD.nSize = sizeof(dummyPFD);
+    dummyPFD.nVersion = 1;
+    dummyPFD.dwFlags = PFD_DRAW_TO_WINDOW | PFD_SUPPORT_OPENGL | PFD_DOUBLEBUFFER;
+    dummyPFD.iPixelType = PFD_TYPE_RGBA;
+    dummyPFD.cColorBits = 32;
+    dummyPFD.cAlphaBits = 8;
+    dummyPFD.cDepthBits = 24;
+	
+    i32 dummyPFDID = ChoosePixelFormat(dummy, &dummyPFD);
+    if(dummyPFDID == 0) 
+    {
+        return 1;
+    }
+	
+    if(!SetPixelFormat(dummy, dummyPFDID, &dummyPFD))
+    {
+        return 1;
+    }
+	
+    HGLRC dummyRC = wglCreateContext(dummy);
+	
+    if(!dummyRC)
+    {
+        return 1;
+    }
+    
+    if(!wglMakeCurrent(dummy, dummyRC))
+    {
+        return 1;
+    }
+	
+    PFNWGLCHOOSEPIXELFORMATARBPROC wglChoosePixelFormatARB = NULL;
+    wglChoosePixelFormatARB = (PFNWGLCHOOSEPIXELFORMATARBPROC)(wglGetProcAddress("wglChoosePixelFormatARB"));
+    if (wglChoosePixelFormatARB == NULL) 
+    {
+        return 1;
+    }
+	
+    PFNWGLCREATECONTEXTATTRIBSARBPROC wglCreateContextAttribsARB = NULL;
+    wglCreateContextAttribsARB = (PFNWGLCREATECONTEXTATTRIBSARBPROC)(wglGetProcAddress("wglCreateContextAttribsARB"));
+    if (wglCreateContextAttribsARB == NULL) 
+    {
+        return 1;
+    }
+	
+    HWND hwnd = CreateWindowEx(WS_EX_NOREDIRECTIONBITMAP,
+                               wc.lpszClassName, "Engine",
+                               WS_CAPTION | WS_SYSMENU | WS_CLIPSIBLINGS | WS_CLIPCHILDREN,
+                               CW_USEDEFAULT, CW_USEDEFAULT,
+                               CW_USEDEFAULT, CW_USEDEFAULT,
+                               NULL, NULL, wc.hInstance, NULL);
+    
+    i32 width = CW_USEDEFAULT;
+    i32 height = CW_USEDEFAULT;
+    
+    platform_engine engine = {};
     platform_render render = {};
     
-	engine.running = true;
-	
-	ShowWindow(hwnd, SW_SHOWDEFAULT);
+    engine.running = true;
+    
+    ShowWindow(hwnd, SW_SHOWDEFAULT);
     UpdateWindow(hwnd);
-	
-	{
-		platform_memory* memory = &engine.memory;
+    
+    {
+        platform_memory* memory = &engine.memory;
         memory->permanentStorage.size = Megabyte(256);
         memory->permanentStorage.used = 0;
-        memory->permanentStorage.base = (u8*)malloc(memory->permanentStorage.size);
+        memory->permanentStorage.base = (u8*)VirtualAlloc(0, memory->permanentStorage.size, 
+														  MEM_RESERVE|MEM_COMMIT, PAGE_READWRITE);
         
         memory->transientStorage.size = Gigabytes(2);
         memory->transientStorage.used = 0;
-        memory->transientStorage.base = (u8*)malloc(memory->transientStorage.size);
+        memory->transientStorage.base = (u8*)VirtualAlloc(0, memory->transientStorage.size, 
+														  MEM_RESERVE|MEM_COMMIT, PAGE_READWRITE);
         
         memory->readFile  = Win32ReadEntireFile;
         memory->writeFile = Win32WriteEntireFile;
@@ -188,46 +245,67 @@ WinMain(HINSTANCE Instance,
         {
             engine.gameInit(&engine);
         }
-		
-		engine.log = Win32Log;
-		engine.vsSource = _shader_resource_vs46;
-		engine.psSource = _shader_resource_ps46;
-	}
+        
+        engine.log = Win32Log;
+        engine.vsSource = _shader_resource_vs46;
+        engine.psSource = _shader_resource_ps46;
+    }
 	
-    // Init OPENGL
     HDC dc = GetDC(hwnd);
-    PIXELFORMATDESCRIPTOR pfd = {};
-    pfd.nSize = sizeof(pfd);
-    pfd.nVersion = 1;
-    pfd.iPixelType = PFD_TYPE_RGBA;
-    pfd.dwFlags = PFD_DRAW_TO_WINDOW | PFD_SUPPORT_OPENGL | PFD_DOUBLEBUFFER;
-    pfd.cColorBits = 24;
-    pfd.iLayerType = PFD_MAIN_PLANE;
-    pfd.cDepthBits = 32;
-    pfd.cStencilBits = 8;
-    
-    i32 pixelFormat = ChoosePixelFormat(dc, &pfd);
-    i32 res = SetPixelFormat(dc, pixelFormat, &pfd);
-    Assert(res);
-    
-    HGLRC tempRC = wglCreateContext(dc);
-	wglMakeCurrent(dc, tempRC);
-    PFNWGLCREATECONTEXTATTRIBSARBPROC wglCreateContextAttribsARB = NULL;
-	wglCreateContextAttribsARB = 
-    (PFNWGLCREATECONTEXTATTRIBSARBPROC)wglGetProcAddress("wglCreateContextAttribsARB");
-    i32 attribList[] = {
-		WGL_CONTEXT_MAJOR_VERSION_ARB, 3,
-		WGL_CONTEXT_MINOR_VERSION_ARB, 3,
-		WGL_CONTEXT_FLAGS_ARB, 0,
-		WGL_CONTEXT_PROFILE_MASK_ARB,
-		WGL_CONTEXT_COREPROFILE_BIT_ARB, 0, 
-	};
-    HGLRC glContext = wglCreateContextAttribsARB(dc, 0, attribList);
+	
+    i32 pixelAttribs[] = 
+    {
+        WGL_DRAW_TO_WINDOW_ARB, GL_TRUE,
+        WGL_SUPPORT_OPENGL_ARB, GL_TRUE,
+        WGL_DOUBLE_BUFFER_ARB, GL_TRUE,
+        WGL_PIXEL_TYPE_ARB, WGL_TYPE_RGBA_ARB,
+        WGL_ACCELERATION_ARB, WGL_FULL_ACCELERATION_ARB,
+        WGL_COLOR_BITS_ARB, 32,
+        WGL_ALPHA_BITS_ARB, 8,
+        WGL_DEPTH_BITS_ARB, 24,
+        WGL_STENCIL_BITS_ARB, 8,
+        WGL_SAMPLE_BUFFERS_ARB, GL_TRUE,
+        WGL_SAMPLES_ARB, 4,
+        0
+    };
+	
+    i32 pixelFormatID;
+    u32 numFormats;
+    b32 status = wglChoosePixelFormatARB(dc, pixelAttribs, NULL, 1, &pixelFormatID, &numFormats);
+	
+    if(status == false || numFormats == 0)
+    {
+        return 1;
+    }
+	
+    PIXELFORMATDESCRIPTOR pfd;
+    DescribePixelFormat(dc, pixelFormatID, sizeof(pfd), &pfd);
+    SetPixelFormat(dc, pixelFormatID, &pfd);
+	
+    i32 major_min = 4, minor_min = 5;
+    i32 contextAttribs[] = 
+    {
+        WGL_CONTEXT_MAJOR_VERSION_ARB, major_min,
+        WGL_CONTEXT_MINOR_VERSION_ARB, minor_min,
+        WGL_CONTEXT_PROFILE_MASK_ARB, WGL_CONTEXT_CORE_PROFILE_BIT_ARB,
+        0
+    };
+	
+    HGLRC rc = wglCreateContextAttribsARB(dc, 0, contextAttribs);
+    if(!rc)
+    {
+        return 1;
+    }
     
     wglMakeCurrent(NULL, NULL);
-    wglDeleteContext(tempRC);
-	wglMakeCurrent(dc, glContext);
-    
+    wglDeleteContext(dummyRC);
+    ReleaseDC(dummyWND, dummy);
+    DestroyWindow(dummyWND);
+	if(!wglMakeCurrent(dc, rc))
+    {
+        return 1;
+    }
+	
     if(!gladLoadGL())
     {
         return -1;
@@ -244,16 +322,16 @@ WinMain(HINSTANCE Instance,
 		(PFNWGLGETSWAPINTERVALEXTPROC)wglGetProcAddress("wglGetSwapIntervalEXT");
 		if (wglSwapInternalEXT(1))
 		{
-			printf("VSynch enabled \n");
+			OutputDebugStringA("VSynch enabled \n");
 		}
 		else
 		{
-			printf("Could not enable VSynch\n");
+			OutputDebugStringA("Could not enable VSynch\n");
 		}
 	}
 	else
 	{
-		printf("WGL_EXT_swap_control not supported \n");
+		OutputDebugStringA("WGL_EXT_swap_control not supported \n");
 	}
     
     render_Init(&engine, &render);
@@ -275,13 +353,6 @@ WinMain(HINSTANCE Instance,
         {
             switch (msg.message)
             {
-                case WM_LBUTTONDOWN:
-                {
-                }break;
-                case WM_LBUTTONUP:
-                {
-                }break;
-                
                 case WM_QUIT:
                 {
                     engine.running = false;
