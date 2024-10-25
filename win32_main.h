@@ -70,9 +70,30 @@
 
 typedef HGLRC(WINAPI* PFNWGLCREATECONTEXTATTRIBSARBPROC) (HDC hDC, HGLRC hShareContext, const int* attribList);
 
-typedef const char* (WINAPI* PFNWGLGETEXTENSIONSSTRINGEXTPROC)(void);
-typedef BOOL (WINAPI* PFNWGLSWAPINTERVALEXTPROC)(int);
-typedef int (WINAPI* PFNWGLGETSWAPINTERVALEXTPROC) (void);
-typedef BOOL (WINAPI* PFNWGLCHOOSEPIXELFORMATARBPROC)(HDC hdc, const int *piAttribIList, const FLOAT *pfAttribFList, UINT nMaxFormats, int *piFormats, UINT *nNumFormats);
+typedef const char *(WINAPI * PFNWGLGETEXTENSIONSSTRINGARBPROC) (HDC hdc);
+typedef const char *(WINAPI * PFNWGLGETEXTENSIONSSTRINGEXTPROC) (void);
+typedef int (WINAPI * PFNWGLGETSWAPINTERVALEXTPROC) (void);
+
+typedef BOOL (WINAPI * PFNWGLGETPIXELFORMATATTRIBIVARBPROC) (HDC hdc, int iPixelFormat, int iLayerPlane, UINT nAttributes, const int *piAttributes, int *piValues);
+
+typedef BOOL (WINAPI * PFNWGLGETPIXELFORMATATTRIBFVARBPROC) (HDC hdc, int iPixelFormat, int iLayerPlane, UINT nAttributes, const int *piAttributes, FLOAT *pfValues);
+
+typedef BOOL (WINAPI * PFNWGLCHOOSEPIXELFORMATARBPROC) (HDC hdc, const int *piAttribIList, const FLOAT *pfAttribFList, UINT nMaxFormats, int *piFormats, UINT *nNumFormats);
+
+typedef BOOL (WINAPI * PFNWGLSWAPINTERVALEXTPROC) (int interval);
+
+internal i32
+StringsAreEqual(const char* src, const char* dst, size_t dstlen)
+{
+    while (*src && dstlen-- && *dst)
+    {
+        if (*src++ != *dst++)
+        {
+            return 0;
+        }
+    }
+	
+    return (dstlen && *src == *dst) || (!dstlen && *src == 0);
+}
 
 #endif //WIN32_MAIN_H
