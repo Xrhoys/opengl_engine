@@ -21,6 +21,9 @@ struct platform_engine
 	
 	char* vsSource;
 	char* psSource;
+	
+	// Audio
+	platform_audio audio;
 };
 
 #endif //ENGINE_H

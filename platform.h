@@ -109,6 +109,23 @@ arena_Pop(arena* a, u64 size)
 	a->used -= size;
 }
 
+////////////////////////////////
+// RING BUFFER API
+////////////////////////////////
+struct ring_buf
+{
+	u8* data;
+	u32 size;
+	u32 read;
+	u32 write;
+};
+
+// RING BUFFER API
+// Read
+// Write
+// Space Left
+// Data left
+
 struct platform_memory
 {
     arena transientStorage;
@@ -117,6 +134,28 @@ struct platform_memory
     // DISK read/write layer
     read_entire_file*  readFile;
     write_entire_file* writeFile;
+};
+
+////////////////////////////////
+// AUDIO LAYER
+////////////////////////////////
+struct audio_sequence;
+struct audio_mix;
+struct platform_audio;
+
+#define AUDIO_INIT(name) void name(thread_context* thread, platform_audio* context)
+typedef AUDIO_INIT(audio_init);
+#define AUDIO_TOOGLE(name) void name(platform_audio* context, b32 state)
+typedef AUDIO_TOOGLE(audio_toogle);
+struct platform_audio
+{
+	ring_buf buffer;
+	b32 playState; // pause/resume
+	i32 flags;
+	audio_sequence* current;
+	
+	audio_init*   platformInit;
+	audio_toogle* playToogle;
 };
 
 #endif //PLATFORM_H
