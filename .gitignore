@@ -13,3 +13,6 @@ build_env.bat
 project.4coder
 scripts/**.rdbg
 scripts/**.cap
+
+# assets
+.opus
