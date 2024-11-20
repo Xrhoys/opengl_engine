@@ -5,6 +5,7 @@
 struct wasm_audio
 {
 	EMSCRIPTEN_WEBAUDIO_T context;
+	ring_buf input;
 	
 	// Sample
 	OggOpusFile* sample;

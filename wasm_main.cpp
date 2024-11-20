@@ -7,6 +7,7 @@
 #include <emscripten/html5.h>
 #include <emscripten/webaudio.h>
 #include <emscripten/em_math.h>
+#include <pthread.h>
 #endif
 
 #define Assert(exp) \
@@ -87,6 +88,85 @@ WRITE_ENTIRE_FILE(WASM_WriteEntireFile)
     return 0;
 }
 
+internal void
+wasm_DecoderThread(void* arg)
+{
+	platform_engine* engine = (platform_engine*)arg;
+	platform_memory* memory = &engine->memory;
+	platform_audio*  audio  = &engine->audio;
+	
+	{
+		read_file_res opusFile = memory->readFile(NULL, "assets/sample.opus", &memory->permanentStorage);
+		if(opusFile.size > 0)
+		{
+			printf("FILE LOADED");
+		}
+		
+		i32 error;
+		audio->sample = op_open_memory(opusFile.data, opusFile.size,& error);
+		OggOpusFile* oggRef = audio->sample;
+		if(oggRef)
+		{
+			printf("LOADED");
+		}
+		
+		i64 size = 0, duration = 0;
+		if(op_seekable(oggRef))
+		{
+			size = op_raw_total(oggRef, -1); 
+			duration = op_pcm_total(oggRef, -1);
+		}
+		
+	}
+	
+	while(true)
+	{
+		case AUDIO_DECODER_START:
+		{
+			// Stereo max sample size
+			//audio->bufferSize = Megabyte(50);
+			//audio->pcmBuffer = arena_PushArray(&memory->permanentStorage, audio->bufferSize, f32);
+		}break;
+		
+		case AUDIO_DECODER_IDLE:
+		{
+		}break;
+		
+		case AUDIO_DECODER_RUNNING:
+		{
+			
+			// Decode the whole track
+			i32 ret = 0;
+			u64 offset = 0;
+			do
+			{
+				ret = op_read_float_stereo(engine->audio.sample, engine->audio.pcmBuffer + offset, 
+										   engine->audio.bufferSize - offset);
+				offset += ret * 2;
+				engine->audio.sampleSize += ret;
+			} while (ret > 0);
+			
+		}break;
+		
+		case AUDIO_DECODER_PAUSE:
+		{
+			
+		}break;
+		
+		case AUDIO_DECODER_STOP:
+		{
+			break;
+		};
+		
+		default:
+		{
+			// Invalid code path;
+		}break;
+	}
+	
+	// Clean up stuff the thread is shutdown
+}
+
 internal bool
 AudioRenderTrack(i32 numInputs, const AudioSampleFrame *inputs,
 				 i32 numOutputs, AudioSampleFrame *outputs,
@@ -109,11 +189,13 @@ AudioRenderTrack(i32 numInputs, const AudioSampleFrame *inputs,
 			index < sampleCount;
 			++index)
 		{
-			outputs[outputIndex].data[index] = *cursor++;
-			outputs[outputIndex].data[index + 128] = *cursor++;
+			//outputs[outputIndex].data[index] = *cursor++;
+			outputs[outputIndex].data[index] = 0;
+			//outputs[outputIndex].data[index + 128] = *cursor++;
+			outputs[outputIndex].data[index + 128] = 0;
 		}
 	}
-		
+	
 	audio->readIndex += sampleCount * 2;
 	
 	return true;
@@ -159,20 +241,6 @@ AudioWorkletProcessorCreated(EMSCRIPTEN_WEBAUDIO_T audioContext, bool success, v
 		.outputChannelCounts = outputChannelCounts
 	};
 	
-	if(!engine->audio.sample) return;
-	
-	// Decode the whole track
-	i32 ret = 0;
-	u64 offset = 0;
-	do 
-	{
-		ret = op_read_float_stereo(engine->audio.sample, engine->audio.pcmBuffer + offset, 
-								   engine->audio.bufferSize - offset);
-		offset += ret * 2;
-		engine->audio.sampleSize += ret;
-	}while(ret > 0);
-	
-	
 	EMSCRIPTEN_AUDIO_WORKLET_NODE_T wasmAudioWorklet = 
 		emscripten_create_wasm_audio_worklet_node(audioContext, "noise-generator", &options, &AudioRenderTrack, userData);
 	
@@ -191,33 +259,6 @@ AudioThreadInitialized(EMSCRIPTEN_WEBAUDIO_T audioContext, bool success, void *u
 	platform_user_data* engine = (platform_user_data*)userData;
 	platform_memory* memory = &engine->engine->memory;
 	wasm_audio* audio = &engine->audio;
-	
-	read_file_res opusFile = memory->readFile(NULL, "assets/sample.opus", &memory->permanentStorage);
-	if(opusFile.size > 0)
-	{
-		printf("FILE LOADED");
-	}
-	
-	i32 error;
-	audio->sample = op_open_memory(opusFile.data, opusFile.size,& error);
-	OggOpusFile* oggRef = audio->sample;
-	if(oggRef)
-	{
-		printf("LOADED");
-	}
-	
-	i64 size = 0, duration = 0;
-	if(op_seekable(oggRef))
-	{
-		size = op_raw_total(oggRef, -1); 
-		duration = op_pcm_total(oggRef, -1);
-	}
-	
-	{
-		// Stereo max sample size
-		audio->bufferSize = Megabyte(50);
-		audio->pcmBuffer = arena_PushArray(&memory->permanentStorage, audio->bufferSize, f32);
-	}
 	
 	WebAudioWorkletProcessorCreateOptions opts = {
 		.name = "noise-generator",
@@ -293,6 +334,13 @@ int main() {
         emscripten_start_wasm_audio_worklet_thread_async(context, audioThreadStack, sizeof(audioThreadStack), 
 														 &AudioThreadInitialized, &userData);
     }
+	
+	{
+		engine->threads[0].state = AUDIO_DECODER_START;
+		engine_>
+		
+		i32 res = pthread_create(&engine.threads[0].id, NULL, &wasm_DecoderThread, &engine);
+	}
 
 #if 1    
 	char* version = (char*)glGetString(GL_VERSION);

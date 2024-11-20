@@ -6,6 +6,9 @@ struct platform_engine
     b32 running;
     u32 posX, posY;
     u32 windowWidth, windowHeight;
+	
+	// Thread contexts
+	thread_context threads[2];
     
     // Timer
     f64 time;
@@ -22,8 +25,9 @@ struct platform_engine
 	char* vsSource;
 	char* psSource;
 	
-	// Audio
+	// Audio, one test sequence
 	platform_audio audio;
+	audio_sequence *currentSequence;
 };
 
 #endif //ENGINE_H

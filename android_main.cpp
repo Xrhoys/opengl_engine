@@ -7,10 +7,12 @@
 #include <android/asset_manager.h>
 #include <android_native_app_glue.h>
 
+#include <string.h>
+
 #define Assert(exp) \
 if(!(exp)) {*(int*)0 = 0;}
 
-#define LOG(...) ((void)__android_log_print(ANDROID_LOG_INFO, "NativeExample", __VA_ARGS__))
+#define LOG(...) ((void)__android_log_print(ANDROID_LOG_INFO, "Engine", __VA_ARGS__))
 
 #include "game.h"
 #include "engine.h"
@@ -164,8 +166,31 @@ android_InitDisplay(platform_user_data* userData)
 	engine->log = android_Log;
 	engine->vsSource = _shader_resource_vs;
 	engine->psSource = _shader_resource_ps;
-		
+	
 	render_Init(engine, render);
+	
+	// Test extensions
+	{
+		GLint n = 0;
+		glGetIntegerv(GL_NUM_EXTENSIONS, &n);
+		for(u32 index = 0;
+			index < n;
+			++index)
+		{
+			char* extension = (char*)glGetStringi(GL_EXTENSIONS, index);
+			LOG("%s\n", extension);
+		}
+		
+		void* glGetTextureHandleARB = (void*)eglGetProcAddress("glGetTextureHandleARB");
+		if(glGetTextureHandleARB)
+		{
+			LOG("FOUND POINTER\n");
+		}
+		else
+		{
+			LOG("NOT FOUND\n");
+		}
+	}
 	
     return 0;
 }

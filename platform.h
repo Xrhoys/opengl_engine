@@ -50,7 +50,8 @@ struct read_file_res
 
 struct thread_context
 {
-    int placeholder;
+    u64 threadId;
+	u32 threadIndex;
 };
 
 #define READ_ENTIRE_FILE(name) \
@@ -120,11 +121,73 @@ struct ring_buf
 	u32 write;
 };
 
-// RING BUFFER API
 // Read
+#define ring_ReadStruct(buffer, type) *(type*)ring_Read_(buffer, sizeof(type))
+#define ring_ReadArray(buffer, size, type) (type*)ring_Read_(buffer, size * sizeof(type), type)
+inline u8*
+ring_Read_(ring_buf* buffer, u32 size)
+{
+	Assert(size < buffer->size);
+	u8* cursor = buffer->data + buffer->read;
+	if(buffer->read + size > buffer->size)
+	{
+		buffer->read += size;
+	}
+	else
+	{
+		buffer->read = buffer->read + size - buffer->size;
+	}
+	
+	return cursor;
+}
+
 // Write
-// Space Left
-// Data left
+#define ring_WriteStruct(buffer, type) (type*)ring_Write_(buffer, sizeof(type))
+#define ring_WriteArray(buffer, size, type) (type*)ring_Write_(buffer, size * sizeof(type));
+inline u8*
+ring_Write_(ring_buf* buffer, u32 size)
+{
+	Assert(size < buffer->size);
+	u8* cursor = buffer->data + buffer->write;
+	if(buffer->write + size > buffer->size)
+	{
+		buffer->write += size;
+	}
+	else
+	{
+		buffer->write = buffer->write + size - buffer->size;
+	}
+	
+	return cursor;
+}
+
+// Readable size
+inline u32
+ring_ReadableLeft(ring_buf* buffer)
+{
+	if(buffer->read < buffer->write)
+	{
+		return buffer->write - buffer->read;
+	}
+	else
+	{
+		return buffer->size - buffer->read + buffer->write;
+	}
+}
+
+// Writable space
+inline u32
+ring_WritableLeft(ring_buf* buffer)
+{
+	if(buffer->read < buffer->write)
+	{
+		return buffer->size - buffer->write + buffer->read;
+	}
+	else
+	{
+		return buffer->read - buffer->write;
+	}
+}
 
 struct platform_memory
 {
@@ -139,8 +202,6 @@ struct platform_memory
 ////////////////////////////////
 // AUDIO LAYER
 ////////////////////////////////
-struct audio_sequence;
-struct audio_mix;
 struct platform_audio;
 
 #define AUDIO_INIT(name) void name(thread_context* thread, platform_audio* context)
@@ -149,13 +210,14 @@ typedef AUDIO_INIT(audio_init);
 typedef AUDIO_TOOGLE(audio_toogle);
 struct platform_audio
 {
-	ring_buf buffer;
-	b32 playState; // pause/resume
-	i32 flags;
-	audio_sequence* current;
-	
+	// Output buffer
 	audio_init*   platformInit;
 	audio_toogle* playToogle;
+	
+	ring_buf buffer;
+	b32      generalPlaystate;
+	i32      flags;
+	f64      time;
 };
 
 #endif //PLATFORM_H
