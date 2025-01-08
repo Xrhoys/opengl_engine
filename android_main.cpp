@@ -314,7 +314,6 @@ android_main(struct android_app* state)
 		
         if (userData.active)
         {
-			
             android_DrawFrame(&userData);
         }
     }

@@ -24,10 +24,6 @@ struct platform_engine
 	
 	char* vsSource;
 	char* psSource;
-	
-	// Audio, one test sequence
-	platform_audio audio;
-	audio_sequence *currentSequence;
 };
 
 #endif //ENGINE_H
